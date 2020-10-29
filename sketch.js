@@ -17,8 +17,8 @@ var birds = [];
 var colors = [];
 var ground;
 var slingshotBird, slingshotConstraint;
-var angle=0;
-var angleSpeed=0;
+var angle = 0;
+var angleSpeed = 0;
 var canvas;
 ////////////////////////////////////////////////////////////
 function setup() {
@@ -56,10 +56,16 @@ function draw() {
 //use arrow keys to control propeller
 function keyPressed(){
   if (keyCode == LEFT_ARROW){
-    //your code here
+    if (Number(angleSpeed.toFixed(2)) === -0.01) {
+      angleSpeed = 0;
+    }
+    angleSpeed = angleSpeed + 0.01;
   }
   else if (keyCode == RIGHT_ARROW){
-    //your code here
+    if (Number(angleSpeed.toFixed(2)) === 0.01) {
+      angleSpeed = 0;
+    }
+    angleSpeed = angleSpeed - 0.01;
   }
 }
 ////////////////////////////////////////////////////////////
