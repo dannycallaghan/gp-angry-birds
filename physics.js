@@ -1,4 +1,8 @@
-////////////////////////////////////////////////////////////////
+/**
+ * Set up the ground body
+ *
+ * @return void.
+ */
 function setupGround(){
   ground = Bodies.rectangle(500, 600, 1000, 40, {
     isStatic: true,
@@ -7,14 +11,23 @@ function setupGround(){
   World.add(engine.world, [ground]);
 }
 
-////////////////////////////////////////////////////////////////
+/**
+ * Render ground
+ *
+ * @return void.
+ */
 function drawGround(){
   push();
-  fill(132, 96, 22);
+  fill(128, 65, 33);
   drawVertices(ground.vertices);
   pop();
 }
-////////////////////////////////////////////////////////////////
+
+/**
+ * Set up the propeller body
+ *
+ * @return void.
+ */
 function setupPropeller(){
   propeller = Bodies.rectangle(110, 480, 200, 15, {
     isStatic: true,
@@ -22,8 +35,12 @@ function setupPropeller(){
   });
   World.add(engine.world, [propeller]);
 }
-////////////////////////////////////////////////////////////////
-//updates and draws the propeller
+
+/**
+ * Render propeller
+ *
+ * @return void.
+ */
 function drawPropeller(){
   push();
   fill(0, 0, 0);
@@ -39,28 +56,35 @@ function drawPropeller(){
   angle += angleSpeed;
   pop();
 }
-////////////////////////////////////////////////////////////////
+
+/**
+ * Set up the bird body
+ *
+ * @return void.
+ */
 function setupBird(){
-  var bird = Bodies.circle(mouseX, mouseY, birdImgSize,{
+  var bird = Bodies.circle(mouseX, mouseY, birdImgSize / 2,{
     friction: 0,
-    restitution: 0.95
+    restitution: 0.95,
+    label: 'Bird'
   });
   Matter.Body.setMass(bird, bird.mass*10);
   World.add(engine.world, [bird]);
   birds.push(bird);
 }
-////////////////////////////////////////////////////////////////
+
+
+/**
+ * Rdner birds
+ *
+ * @return void.
+ */
 function drawBirds(){
   push();
   birds.forEach((bird, i) => {
-    //drawVertices(bird.vertices);
-
     const pos = bird.position;
-    //imageMode(CENTER);
-    image(birdImg, pos.x, pos.y + 6, birdImgSize, birdImgSize);
-    //drawConstraint(slingshotConstraintRight);
-    //drawConstraint(slingshotConstraintLeft);
-
+    imageMode(CENTER);
+    image(birdImg, pos.x, pos.y, birdImgSize, birdImgSize);
     if (isOffScreen(bird)) {
       removeFromWorld(bird);
       birds.splice(i, 1);
@@ -70,29 +94,45 @@ function drawBirds(){
   pop();
 }
 
+/**
+ * Set up the bomb body
+ *
+ * @return void.
+ */
 function setupBomb(){
-  var bomb = Bodies.circle(mouseX, mouseY, bombImgSize,{
+  var bomb = Bodies.circle(mouseX, mouseY, bombImgSize / 2,{
     friction: 0,
-    restitution: 0.95
+    restitution: 0.95,
+    label: 'Bomb'
   });
   Matter.Body.setMass(bomb, bomb.mass*10);
   World.add(engine.world, [bomb]);
   bombs.push(bomb);
+  createdBombs++; // Keep track of how many bombs have been created
+  explode(createdBombs);
+
+  // Waits specified time then explodes bomb
+  function explode (index) {
+    setTimeout(() => {
+      doExplode(engine, 0);
+    }, bombTimer);
+  }
 }
-////////////////////////////////////////////////////////////////
+
+/**
+ * Render bomb
+ *
+ * @return void.
+ */
 function drawBombs(){
   push();
   bombs.forEach((bomb, i) => {
-    //drawVertices(bird.vertices);
-
     const pos = bomb.position;
-    //imageMode(CENTER);
-    image(bombImg, pos.x, pos.y + 6, bombImgSize, bombImgSize);
-    //drawConstraint(slingshotConstraintRight);
-    //drawConstraint(slingshotConstraintLeft);
-
+    imageMode(CENTER);
+    image(bombImg, pos.x, pos.y, bombImgSize, bombImgSize);
     if (isOffScreen(bomb)) {
       removeFromWorld(bomb);
+      // Remove from bombs array, but not createdBombs array - that's fixed
       bombs.splice(i, 1);
       i--;
     }
@@ -100,8 +140,11 @@ function drawBombs(){
   pop();
 }
 
-////////////////////////////////////////////////////////////////
-//creates a tower of boxes
+/**
+ * Set up the tower body
+ *
+ * @return void.
+ */
 function setupTower(){
   const rows = 6;
   const cols = 3;
@@ -110,14 +153,20 @@ function setupTower(){
   const colStart = width - ((cols) * 80);
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j < cols; j++) {
-      const box = Bodies.rectangle(colStart + j * boxSize, rowStart - i * boxSize, boxSize, boxSize);
+      const box = Bodies.rectangle(colStart + j * boxSize, rowStart - i * boxSize, boxSize, boxSize, {
+        label: 'Box'
+      });
       World.add(engine.world, [box]);
       boxes.push(box);
     }
   }
 }
-////////////////////////////////////////////////////////////////
-//draws tower of boxes
+
+/**
+ * Render tower
+ *
+ * @return void.
+ */
 function drawTower(){
   push();
   boxes.forEach((box, i) => {
@@ -140,14 +189,21 @@ function drawTower(){
   });
   pop();
 }
-////////////////////////////////////////////////////////////////
+
+/**
+ * Set up the slingshot body
+ *
+ * @return void.
+ */
 function setupSlingshot(){
-  slingshotBird = Bodies.circle(268, 208, shotImgSize, {
+  slingshotBird = Bodies.circle(268, 208, shotImgSize / 2, {
     friction: 0,
-    restitution: 0.95
+    restitution: 0.95,
+    label: 'Angry Bird'
   });
   Matter.Body.setMass(slingshotBird, slingshotBird.mass * 10);
 
+  // Add right constaint
   slingshotConstraintRight = Constraint.create({
     pointA: { x: 268, y: 180 },
     bodyB: slingshotBird,
@@ -156,6 +212,7 @@ function setupSlingshot(){
     damping: 0.0001
   });
 
+  // Add left constraint
   slingshotConstraintLeft = Constraint.create({
     pointA: { x: 178, y: 180 },
     bodyB: slingshotBird,
@@ -166,35 +223,63 @@ function setupSlingshot(){
 
   World.add(engine.world, [slingshotBird, slingshotConstraintRight, slingshotConstraintLeft]);
 }
-////////////////////////////////////////////////////////////////
-//draws slingshot bird and its constraint
+
+/**
+ * Render slingshot
+ *
+ * @return void.
+ */
 function drawSlingshot(){
-  push();
-  fill(255, 0, 0);
-  drawVertices(slingshotBird);
   const pos = slingshotBird.position;
-
-  image(slingshotImg, 130, 120, slingshotImgSize[0], slingshotImgSize[1]);
-
+  push();
+  // Add slingshot image
   imageMode(CENTER);
-
-  //image(shotImg, pos.x, pos.y, shotImgSize, shotImgSize);
-
-  
+  image(slingshotImg, 210, 350, slingshotImgSize[0], slingshotImgSize[1]);
   drawConstraint(slingshotConstraintRight);
+  imageMode(CENTER);
+  image(shotImg, pos.x, pos.y, shotImgSize, shotImgSize);
   drawConstraint(slingshotConstraintLeft);
-
-
-  //const pos = bird.position;
-  //imageMode(CENTER);
-  //drawConstraint(slingshotConstraint);
-
-
   pop();
 }
-/////////////////////////////////////////////////////////////////
+
+/**
+ * Adds explosion effect
+ *
+ * @return void.
+ */
+function doExplode(engine, bomb) {
+  const bodies = boxes; // Only move the boxes
+  const bombPos = bombs[bomb] ? bombs[bomb].position : null;
+  if (!bombPos) { return; }
+  // Causes explosion
+  function bang (item, power) {
+    const forceMagnitude = power * item.mass;
+    Matter.Body.applyForce(item, item.position, {
+      x:
+        (forceMagnitude + Matter.Common.random() * forceMagnitude) *
+        Matter.Common.choose([1, -1]),
+      y: -forceMagnitude + Matter.Common.random() * -forceMagnitude
+    });
+  }
+
+  for (let i = 0; i < bodies.length; ++i) {
+    const body = bodies[i];
+    // Only explode boxes close enough to the bomb blast
+    if (!body.isStatic && dist(body.position.x, body.position.y, bombPos.x, bombPos.y)  < 150) {
+      bang(body, 0.05);
+    }
+  }
+
+  // Also explode the bomb
+  bang(bombs[0], 0.09);
+}
+
+/**
+ * Adds mouse interactions
+ *
+ * @return void.
+ */
 function setupMouseInteraction(){
-  console.warn(`setupMouseInteraction`);
   var mouse = Mouse.create(canvas.elt);
   var mouseParams = {
     mouse: mouse,
@@ -203,4 +288,39 @@ function setupMouseInteraction(){
   mouseConstraint = MouseConstraint.create(engine, mouseParams);
   mouseConstraint.mouse.pixelRatio = pixelDensity();
   World.add(engine.world, mouseConstraint);
+
+  // Don't allow the mouse drag event to work on anything but the slingshot
+  // You shouldn't be able to drag boxes, birds, bombs, etc, or the game is pointless
+  // Store the active element
+  let activeElement;
+  let mousedown = false;
+
+  // Capture mousedown
+  canvas.elt.addEventListener('mousedown', () => {
+    mousedown = true;
+
+  });
+
+  // Capture mousemove
+  canvas.elt.addEventListener('mousemove', (e) => {
+    if (mousedown) {
+      const query = Matter.Query.point(Matter.Composite.allBodies(engine.world), mouse.position)
+      if (query.length) {
+        // If it's something we shouldn't drag, make it static and store a reference to it
+        if (query[0].label === 'Box' || query[0].label === 'Bomb' || query[0].label === 'Bird') {
+          activeElement = query[0];
+          activeElement.isStatic = true;
+        }
+      }
+    }
+  });
+
+  // Capture mouseup
+  canvas.elt.addEventListener('mouseup', () => {
+    // Make it not static again
+    if (activeElement && activeElement.isStatic !== 'undefined') {
+      activeElement.isStatic = false;
+    }
+    mousedown = false;
+  });
 }

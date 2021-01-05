@@ -1,26 +1,45 @@
 // Example is based on examples from: http://brm.io/matter-js/, https://github.com/shiffman/p5-matter
 // add also Benedict Gross credit
 
-var Engine = Matter.Engine;
-var Render = Matter.Render;
-var World = Matter.World;
-var Bodies = Matter.Bodies;
-var Body = Matter.Body;
-var Constraint = Matter.Constraint;
-var Mouse = Matter.Mouse;
-var MouseConstraint = Matter.MouseConstraint;
+/**
+ * Shortcuts
+ */
+const Engine = Matter.Engine;
+const Render = Matter.Render;
+const World = Matter.World;
+const Bodies = Matter.Bodies;
+const Body = Matter.Body;
+const Constraint = Matter.Constraint;
+const Mouse = Matter.Mouse;
+const MouseConstraint = Matter.MouseConstraint;
 
-var engine;
-var propeller;
-var boxes = [];
-var birds = [];
-var bombs = [];
-var ground;
-var slingshotBird, slingshotConstraintRight, slingshotConstraintLeft;
-var angle = 0;
-var angleSpeed = 0;
-var canvas;
+/**
+ * Game objects and settings
+ */
+let engine;
+let propeller;
+let boxes = [];
+let birds = [];
+let bombs = [];
+let createdBombs = 0;
+let ground;
+let slingshotBird;
+let slingshotConstraintRight;
+let slingshotConstraintLeft;
+let angle = 0;
+let angleSpeed = 0;
+let canvas;
+const maxBombs = 3;
+const bombTimer = 3000;
+let isGameStarted = false;
+let isGameOver = false;
+let isGameWon = false;
+const timerAmount = 60;
+let timer = timerAmount;
 
+/**
+ * Images
+ */
 let bg;
 let birdImg;
 const birdImgSize = 60;
@@ -36,12 +55,11 @@ const titleImgSize = [500, 109];
 let bombImg;
 const bombImgSize = 60;
 
-let isGameStarted = false;
-let isGameOver = false;
-let isGameWon = false;
-const timerAmount = 60;
-let timer = timerAmount;
-
+/**
+ * P5 preload functionality
+ *
+ * @return void.
+ */
 function preload () {
   bg = loadImage('./images/background.png');
   birdImg = loadImage('./images/bird2.png');
@@ -54,87 +72,76 @@ function preload () {
   titleImg = loadImage('./images/title.png');
 }
 
-////////////////////////////////////////////////////////////
-function setup() {
+/**
+ * P5 setup functionality
+ *
+ * @return void.
+ */
+function setup () {
   canvas = createCanvas(1000, 600);
-
-  engine = Engine.create();  // create an engine
-
+  engine = Engine.create();
   setupGround();
-
   setupPropeller();
-
   setupTower();
-
   setupSlingshot();
-
   setupMouseInteraction();
 }
-////////////////////////////////////////////////////////////
-function draw() {
+
+/**
+ * P5 draw functionality
+ *
+ * @return void.
+ */
+function draw () {
   background(bg);
 
   Engine.update(engine);
 
   if (isGameStarted) {
     drawGround();
-
     drawPropeller();
-  
     drawTower();
-  
     drawBirds();
-  
     drawBombs();
-
     drawSlingshot();
-
     drawTimer();
-
     drawProgress();
-
     return;
   }
 
   drawGameText();
-  
 }
 
-function explosion(engine) {
-  const bodies = Matter.Composite.allBodies(engine.world);
-
-  for (let i = 0; i < bodies.length; ++i) {
-    const body = bodies[i];
-
-    if (!body.isStatic && body.position.y >= 500) {
-      const forceMagnitude = 0.05 * body.mass;
-
-      Matter.Body.applyForce(body, body.position, {
-        x:
-          (forceMagnitude + Matter.Common.random() * forceMagnitude) *
-          Matter.Common.choose([1, -1]),
-        y: -forceMagnitude + Matter.Common.random() * -forceMagnitude
-      });
-    }
-  }
-}
-
+/**
+ * Draws the game progress - items remaining / bombs remaining
+ *
+ * @return void.
+ */
 function drawProgress () {
   push();
+  textFont('Impact');
   fill(255, 255, 0);
 	stroke(0);
 	strokeWeight(2);
-  textFont('Impact');
-  textSize(60);
   textSize(30);
   textAlign(LEFT);
-  text('ITEMS REMAINING:', 20, 50);
+  text('BOXES/PIGS REMAINING:', 20, 50);
   textSize(60);
   textAlign(CENTER);
-  text(boxes.length, 266, 60);
+  text(boxes.length, 336, 60);
+  textSize(30);
+  textAlign(CENTER);
+  text('BOMBS:', width / 2, 50);
+  textSize(60);
+  text(maxBombs - createdBombs, width / 2 + 70, 60);
   pop();
 }
 
+/**
+ * Draws and keeps track of time remaining
+ *
+ * @return void.
+ */
 function drawTimer () {
   push();
   fill(255, 255, 0);
@@ -157,41 +164,11 @@ function drawTimer () {
   }
 }
 
-
-function gameOver (success) {
-  isGameOver = true;
-  isGameStarted = false;
-  isGameWon = success;
-  resetGameState();
-}
-
-function resetGameState () {
-  //var engine;
-  propeller;
-  boxes = [];
-  birds = [];
-  colors = [];
-  ground;
-  slingshotBird, slingshotConstraintRight, slingshotConstraintLeft;
-  angle = 0;
-  angleSpeed = 0;
-
-  engine = Engine.create();
-
-  setupGround();
-
-  setupPropeller();
-
-  setupTower();
-
-  setupSlingshot();
-
-  setupMouseInteraction();
-
-  timer = timerAmount;
-}
-
-
+/**
+ * Draws the text for the main game screen
+ * 
+ * @return void.
+ */
 function drawGameText () {
 	push();
 
@@ -212,7 +189,8 @@ function drawGameText () {
 	strokeWeight(4);
 	text(`PRESS 'R' TO RESET SLINGSHOT`, textStartX, textStartY + 50);
   text(`PRESS LEFT AND RIGHT ARROWS TO SPIN PROPELLER`, textStartX, textStartY + 80);
-  text(`PRESS 'B' TO CREATE A BIRD`, textStartX, textStartY + 110);
+  text(`PRESS 'V' TO CREATE A BIRD`, textStartX, textStartY + 110);
+  text(`PRESS 'B' TO CREATE A BOMB`, textStartX, textStartY + 140);
 
   // Title image
   const titleImgX = width / 2;
@@ -244,35 +222,79 @@ function drawGameText () {
 	pop();
 }
 
+/**
+ * Sets the game to a finished state.
+ * 
+ * @param {boolean} success - Whether the user beat the game
+ * 
+ * @return void.
+ */
+function gameOver (success) {
+  isGameOver = true;
+  isGameStarted = false;
+  isGameWon = success;
+  resetGameState();
+}
+
+/**
+ * Resets all the global vars and calls set up functions again ready for a new game
+ * 
+ * @return void.
+ */
+function resetGameState () {
+  propeller;
+  boxes = [];
+  bombs = [];
+  birds = [];
+  createdBombs = 0;
+  ground;
+  slingshotBird, slingshotConstraintRight, slingshotConstraintLeft;
+  angle = 0;
+  angleSpeed = 0;
+  timer = timerAmount;
+  engine = Engine.create();
+
+  setupGround();
+  setupPropeller();
+  setupTower();
+  setupSlingshot();
+  setupMouseInteraction();
+}
+
+/**
+ * Starts a game
+ * 
+ * @return void.
+ */
 function startGame () {
   isGameWon = false;
   isGameOver = false;
-	//if (isGameOver) { return; };
-	//resetGameState();
 	isGameStarted = true;
-	//renderCharacter(gameChar_x, gameChar_y, state);
 }
 
-////////////////////////////////////////////////////////////
-//use arrow keys to control propeller
-function keyPressed(){
+/**
+ * p5 key pressed event - starts game and controls propeller
+ * 
+ * @return void.
+ */
+function keyPressed () {
+  // Space bar - start game
   if (!isGameStarted && keyCode === 32) {
-    console.warn('go');
-    //isGameOver = false;
     startGame();
     return;
   }
-
+  // Anything else, do nothing if the game hasn't started
   if (!isGameStarted) {
     return;
   }
-
+  // Left arrow
   if (keyCode == LEFT_ARROW){
     if (Number(angleSpeed.toFixed(2)) === -0.01) {
       angleSpeed = 0;
     }
     angleSpeed = angleSpeed + 0.01;
   }
+  // Right arrow
   else if (keyCode == RIGHT_ARROW){
     if (Number(angleSpeed.toFixed(2)) === 0.01) {
       angleSpeed = 0;
@@ -280,22 +302,28 @@ function keyPressed(){
     angleSpeed = angleSpeed - 0.01;
   }
 }
-////////////////////////////////////////////////////////////
-function keyTyped(){
+
+/**
+ * p5 key typed event - adds birds, bombs and resets slingshot
+ * 
+ * @return void.
+ */
+function keyTyped () {
+  // Do nothing if game hasn't started
   if (!isGameStarted) {
     return;
   }
-
-  //if 'b' create a new bird to use with propeller
-  if (key==='b'){
+  // V - add a bird
+  if (key==='v'){
     setupBird();
   }
-
-  if (key==='m'){
-    setupBomb();
+  // B - add a bomb
+  if (key==='b'){
+    if (createdBombs < maxBombs) {
+      setupBomb();
+    }
   }
-
-  //if 'r' reset the slingshot
+  // R - reset the slingshot
   if (key==='r'){
     removeFromWorld(slingshotBird);
     removeFromWorld(slingshotConstraintRight);
@@ -304,8 +332,13 @@ function keyTyped(){
   }
 }
 
+/**
+ * Overrides the helper function of the same name so that we can have more than one constraint
+ * 
+ * @return void.
+ */
 window.mouseReleased = function () {
-  console.warn('1');
+  // Do nothing if game hasn't started
   if (!isGameStarted) {
     return;
   }
@@ -319,13 +352,22 @@ window.mouseReleased = function () {
 }
 
 //**********************************************************************
+//**********************************************************************
+//**********************************************************************
+//**********************************************************************
+//**********************************************************************
+//**********************************************************************
+//**********************************************************************
+//**********************************************************************
+//**********************************************************************
+
+//**********************************************************************
 //  HELPER FUNCTIONS - DO NOT WRITE BELOW THIS line
 //**********************************************************************
 
 //if mouse is released destroy slingshot constraint so that
 //slingshot bird can fly off
 function mouseReleased(){
-  console.warn('1');
   setTimeout(() => {
     slingshotConstraint.bodyB = null;
     slingshotConstraint.pointA = { x: 0, y: 0 };
