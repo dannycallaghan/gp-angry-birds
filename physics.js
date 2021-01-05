@@ -170,13 +170,15 @@ function setupSlingshot(){
 //draws slingshot bird and its constraint
 function drawSlingshot(){
   push();
+  fill(255, 0, 0);
+  drawVertices(slingshotBird);
   const pos = slingshotBird.position;
-  imageMode(CENTER);
 
   image(slingshotImg, 130, 120, slingshotImgSize[0], slingshotImgSize[1]);
 
+  imageMode(CENTER);
 
-  image(shotImg, pos.x, pos.y, shotImgSize, shotImgSize);
+  //image(shotImg, pos.x, pos.y, shotImgSize, shotImgSize);
 
   
   drawConstraint(slingshotConstraintRight);
