@@ -349,7 +349,35 @@ window.mouseReleased = function () {
     slingshotConstraintLeft.bodyB = null;
     slingshotConstraintLeft.pointA = { x: 0, y: 0 };
   }, 100);
-}
+};
+
+/**
+ * Overrides the helper function so that the constraint colours can be changed
+ * 
+ * @return void.
+ */
+window.drawConstraint = function (constraint) {
+  push();
+  var offsetA = constraint.pointA;
+  var posA = {x:0, y:0};
+  if (constraint.bodyA) {
+    posA = constraint.bodyA.position;
+  }
+  var offsetB = constraint.pointB;
+  var posB = {x:0, y:0};
+  if (constraint.bodyB) {
+    posB = constraint.bodyB.position;
+  }
+  strokeWeight(5);
+  stroke(48, 23, 8);
+  line(
+    posA.x + offsetA.x,
+    posA.y + offsetA.y,
+    posB.x + offsetB.x,
+    posB.y + offsetB.y
+  );
+  pop();
+};
 
 //**********************************************************************
 //**********************************************************************
@@ -406,7 +434,7 @@ function drawConstraint(constraint) {
     posB = constraint.bodyB.position;
   }
   strokeWeight(5);
-  stroke(255);
+  stroke(255, 0, 0);
   line(
     posA.x + offsetA.x,
     posA.y + offsetA.y,
