@@ -333,30 +333,13 @@ function keyTyped () {
 }
 
 /**
- * Overrides the helper function of the same name so that we can have more than one constraint
+ * Renders the constraints on the slingshot
+ * 
+ * @param {matter constraint object} constraint - The constraint to render
  * 
  * @return void.
  */
-window.mouseReleased = function () {
-  // Do nothing if game hasn't started
-  if (!isGameStarted) {
-    return;
-  }
-  setTimeout(() => {
-    slingshotConstraintRight.bodyB = null;
-    slingshotConstraintRight.pointA = { x: 0, y: 0 };
-
-    slingshotConstraintLeft.bodyB = null;
-    slingshotConstraintLeft.pointA = { x: 0, y: 0 };
-  }, 100);
-};
-
-/**
- * Overrides the helper function so that the constraint colours can be changed
- * 
- * @return void.
- */
-window.drawConstraint = function (constraint) {
+function renderConstraint (constraint) {
   push();
   var offsetA = constraint.pointA;
   var posA = {x:0, y:0};
@@ -377,6 +360,25 @@ window.drawConstraint = function (constraint) {
     posB.y + offsetB.y
   );
   pop();
+}
+
+/**
+ * Overrides the helper function of the same name so that we can have more than one constraint
+ * 
+ * @return void.
+ */
+window.mouseReleased = function () {
+  // Do nothing if game hasn't started
+  if (!isGameStarted) {
+    return;
+  }
+  setTimeout(() => {
+    slingshotConstraintRight.bodyB = null;
+    slingshotConstraintRight.pointA = { x: 0, y: 0 };
+
+    slingshotConstraintLeft.bodyB = null;
+    slingshotConstraintLeft.pointA = { x: 0, y: 0 };
+  }, 100);
 };
 
 //**********************************************************************

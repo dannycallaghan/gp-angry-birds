@@ -235,10 +235,10 @@ function drawSlingshot(){
   // Add slingshot image
   imageMode(CENTER);
   image(slingshotImg, 210, 350, slingshotImgSize[0], slingshotImgSize[1]);
-  drawConstraint(slingshotConstraintRight);
+  renderConstraint(slingshotConstraintRight);
   imageMode(CENTER);
   image(shotImg, pos.x, pos.y, shotImgSize, shotImgSize);
-  drawConstraint(slingshotConstraintLeft);
+  renderConstraint(slingshotConstraintLeft);
   pop();
 }
 
