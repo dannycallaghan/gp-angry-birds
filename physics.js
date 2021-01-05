@@ -10,13 +10,13 @@ function setupGround(){
 ////////////////////////////////////////////////////////////////
 function drawGround(){
   push();
-  fill(128);
+  fill(132, 96, 22);
   drawVertices(ground.vertices);
   pop();
 }
 ////////////////////////////////////////////////////////////////
 function setupPropeller(){
-  propeller = Bodies.rectangle(150, 480, 200, 15, {
+  propeller = Bodies.rectangle(110, 480, 200, 15, {
     isStatic: true,
     angle: angle 
   });
@@ -26,7 +26,14 @@ function setupPropeller(){
 //updates and draws the propeller
 function drawPropeller(){
   push();
+  fill(0, 0, 0);
+  stroke(0);
+  strokeWeight(2);
+  rect(102, 420, 15, 160);
+  fill(103, 62, 35);
   drawVertices(propeller.vertices);
+  fill(249, 202, 101);
+  ellipse(110, 480, 6, 6)
   Body.setAngle(propeller, angle);
   Body.setAngularVelocity(propeller, angleSpeed);
   angle += angleSpeed;
@@ -34,7 +41,7 @@ function drawPropeller(){
 }
 ////////////////////////////////////////////////////////////////
 function setupBird(){
-  var bird = Bodies.circle(mouseX, mouseY, 20,{
+  var bird = Bodies.circle(mouseX, mouseY, birdImgSize,{
     friction: 0,
     restitution: 0.95
   });
@@ -46,7 +53,14 @@ function setupBird(){
 function drawBirds(){
   push();
   birds.forEach((bird, i) => {
-    drawVertices(bird.vertices);
+    //drawVertices(bird.vertices);
+
+    const pos = bird.position;
+    //imageMode(CENTER);
+    image(birdImg, pos.x, pos.y + 6, birdImgSize, birdImgSize);
+    //drawConstraint(slingshotConstraintRight);
+    //drawConstraint(slingshotConstraintLeft);
+
     if (isOffScreen(bird)) {
       removeFromWorld(bird);
       birds.splice(i, 1);
@@ -55,20 +69,50 @@ function drawBirds(){
   });
   pop();
 }
+
+function setupBomb(){
+  var bomb = Bodies.circle(mouseX, mouseY, bombImgSize,{
+    friction: 0,
+    restitution: 0.95
+  });
+  Matter.Body.setMass(bomb, bomb.mass*10);
+  World.add(engine.world, [bomb]);
+  bombs.push(bomb);
+}
+////////////////////////////////////////////////////////////////
+function drawBombs(){
+  push();
+  bombs.forEach((bomb, i) => {
+    //drawVertices(bird.vertices);
+
+    const pos = bomb.position;
+    //imageMode(CENTER);
+    image(bombImg, pos.x, pos.y + 6, bombImgSize, bombImgSize);
+    //drawConstraint(slingshotConstraintRight);
+    //drawConstraint(slingshotConstraintLeft);
+
+    if (isOffScreen(bomb)) {
+      removeFromWorld(bomb);
+      bombs.splice(i, 1);
+      i--;
+    }
+  });
+  pop();
+}
+
 ////////////////////////////////////////////////////////////////
 //creates a tower of boxes
 function setupTower(){
   const rows = 6;
   const cols = 3;
-  const boxSize = 80;
-  const rowStart = height - 40;
-  const colStart = width - ((cols + 1) * 80);
+  const boxSize = boxImgSize;
+  const rowStart = height - 50;
+  const colStart = width - ((cols) * 80);
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j < cols; j++) {
-      const box = Bodies.rectangle(colStart + j * boxSize, rowStart - i * boxSize, 80, 80);
+      const box = Bodies.rectangle(colStart + j * boxSize, rowStart - i * boxSize, boxSize, boxSize);
       World.add(engine.world, [box]);
       boxes.push(box);
-      colors = colors.concat([[0, random(40, 255), 0]]);
     }
   }
 }
@@ -77,41 +121,73 @@ function setupTower(){
 function drawTower(){
   push();
   boxes.forEach((box, i) => {
-    fill(...colors[i]);
-    drawVertices(box.vertices);
+    const pos = box.position;
+    imageMode(CENTER);
+    if (!boxStoredImages[i]) {
+      boxImg = boxImgs[(Math.floor(Math.random() * 3) + 1) - 1];
+      boxStoredImages[i] = boxImg;
+    }
+    image(boxStoredImages[i], pos.x, pos.y, boxImgSize, boxImgSize);
     if (isOffScreen(box)) {
       removeFromWorld(box);
       boxes.splice(i, 1);
+      boxStoredImages.splice(i, 1);
       i--;
+    }
+    if (!boxes.length) {
+      gameOver(true);
     }
   });
   pop();
 }
 ////////////////////////////////////////////////////////////////
 function setupSlingshot(){
-  slingshotBird = Bodies.circle(198, 208, 20, {
+  slingshotBird = Bodies.circle(268, 208, shotImgSize, {
     friction: 0,
     restitution: 0.95
   });
   Matter.Body.setMass(slingshotBird, slingshotBird.mass * 10);
 
-  slingshotConstraint = Constraint.create({
-    pointA: { x: 198, y: 180 },
+  slingshotConstraintRight = Constraint.create({
+    pointA: { x: 268, y: 180 },
     bodyB: slingshotBird,
     pointB: { x: 0, y: 0 },
     stiffness: 0.01,
     damping: 0.0001
   });
 
-  World.add(engine.world, [slingshotBird, slingshotConstraint]);
+  slingshotConstraintLeft = Constraint.create({
+    pointA: { x: 178, y: 180 },
+    bodyB: slingshotBird,
+    pointB: { x: 0, y: 0 },
+    stiffness: 0.01,
+    damping: 0.0001
+  });
+
+  World.add(engine.world, [slingshotBird, slingshotConstraintRight, slingshotConstraintLeft]);
 }
 ////////////////////////////////////////////////////////////////
 //draws slingshot bird and its constraint
 function drawSlingshot(){
   push();
-  fill(255, 165, 0);
-  drawVertices(slingshotBird.vertices);
-  drawConstraint(slingshotConstraint);
+  const pos = slingshotBird.position;
+  imageMode(CENTER);
+
+  image(slingshotImg, 130, 120, slingshotImgSize[0], slingshotImgSize[1]);
+
+
+  image(shotImg, pos.x, pos.y, shotImgSize, shotImgSize);
+
+  
+  drawConstraint(slingshotConstraintRight);
+  drawConstraint(slingshotConstraintLeft);
+
+
+  //const pos = bird.position;
+  //imageMode(CENTER);
+  //drawConstraint(slingshotConstraint);
+
+
   pop();
 }
 /////////////////////////////////////////////////////////////////
